@@ -26,9 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-4^1si+#o=apb%r257gctwn7inle(0nvl61!n9aa(r-i8q0!^kv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['86b6314916b4.ngrok-free.app', 'localhost', ]
+ALLOWED_HOSTS = ['86b6314916b4.ngrok-free.app', 'localhost', 'wallet-service-production-3a02.up.railway.app']
 
 
 # Application definition
