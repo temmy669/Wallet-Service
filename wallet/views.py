@@ -101,16 +101,19 @@ class GoogleCallbackView(APIView):
                 )
             
             # Get or create user
-            user, created = User.objects.get_or_create(
-                email=email, first_name=first_name, last_name=last_name,
-                defaults={
-                    'username': email,
-                    'first_name': first_name,
-                    'last_name': last_name       
-                    }
-                
-            )
-            
+            try:
+                user = User.objects.get(email=email)
+                created = False
+            except User.DoesNotExist:
+                # username = generate_unique_username(email)
+                user = User.objects.create(
+                    email=email,
+                    # username=username,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                created = True
+            user = User.objects.get(email=email)        
             # Create wallet if user is new
             if created:
                 Wallet.objects.create(
