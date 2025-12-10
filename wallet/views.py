@@ -14,6 +14,7 @@ from django.conf import settings
 from decimal import Decimal
 import json
 import secrets
+from django.utils import timezone as dj_timezone
 from datetime import datetime, timezone
 
 from .models import Wallet, Transaction, APIKey
@@ -177,22 +178,21 @@ class DummyLogin(APIView):
 
 # API Key Management Views
 class CreateAPIKeyView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     
     def post(self, request):
         
         serializer = APIKeyCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # Check active keys limit
         active_keys = APIKey.objects.filter(
-            user=request.user,
-            is_active=True,
-            expires_at__gt=datetime.now()
-        ).count()
-        
-        if active_keys == 5:
+        user=request.user,
+        is_active=True,     
+        expires_at__gt=dj_timezone.now()
+         ).count()
+
+        if active_keys >= 5:
             return Response(
                 {"error": "Maximum of 5 active API keys allowed"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -219,8 +219,8 @@ class CreateAPIKeyView(APIView):
 
 # List API Keys
 class ListAPIKeysView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     
     def get(self, request):
         api_keys = APIKey.objects.filter(user=request.user).order_by('-created_at')
@@ -245,19 +245,24 @@ class ListAPIKeysView(APIView):
 
 # Revoke API Key
 class RevokeAPIKeyView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     
     def post(self, request):
         key_id = request.data.get('key_id')
-        
+        api_key = APIKey.objects.get(key_id=key_id, user=request.user)
         if not key_id:
             return Response(
                 {"error": "key_id is required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
+        if api_key.is_active == False:
+            return Response(
+                {"error": "API key is already revoked"},
+                status=status.HTTP_400_BAD_REQUEST)
+            
         try:
-            api_key = APIKey.objects.get(key_id=key_id, user=request.user)
             api_key.is_active = False
             api_key.revoked_at = datetime.now()
             api_key.save()
@@ -290,11 +295,20 @@ class RolloverAPIKeyView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
+        # Check if revoked    
+        if revoked := not old_key.is_active:
+            return Response(
+                {"error": "Cannot rollover a revoked key"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if expired
         if not old_key.is_expired:
             return Response(
                 {"error": "Key must be expired to rollover"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        
         
         # Check active keys limit
         active_keys = APIKey.objects.filter(

@@ -15,7 +15,10 @@ class TransactionSerializer(serializers.ModelSerializer):
 class APIKeyCreateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
     permissions = serializers.ListField(
-        child=serializers.ChoiceField(choices=['deposit', 'transfer', 'read'])
+        child=serializers.ChoiceField(choices=['deposit', 'transfer', 'read'],
+                                      error_messages={
+            "invalid_choice": "Invalid permission. Valid values are: deposit, transfer, read."}
+        )
     )
     expiry = serializers.ChoiceField(choices=['1H', '1D', '1M', '1Y'],
                                      error_messages={
