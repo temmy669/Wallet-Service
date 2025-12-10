@@ -177,8 +177,8 @@ class DummyLogin(APIView):
 
 # API Key Management Views
 class CreateAPIKeyView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    authentication_classes = []
+    permission_classes = []
     
     def post(self, request):
         
@@ -219,8 +219,8 @@ class CreateAPIKeyView(APIView):
 
 # List API Keys
 class ListAPIKeysView(APIView):
-    authentication_classes = [JWTAuthentication, APIKeyAuthentication]
-    permission_classes = [IsAuthenticated]
+    authentication_classes = []
+    permission_classes = []
     
     def get(self, request):
         api_keys = APIKey.objects.filter(user=request.user).order_by('-created_at')
