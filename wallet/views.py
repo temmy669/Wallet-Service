@@ -278,8 +278,8 @@ class RevokeAPIKeyView(APIView):
             )
 
 class RolloverAPIKeyView(APIView):
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     
     def post(self, request):
         serializer = APIKeyRolloverSerializer(data=request.data)
